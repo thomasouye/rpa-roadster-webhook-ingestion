@@ -14,24 +14,62 @@
 
 import signal
 import sys
+import config
+import os
+
 from types import FrameType
 
-from flask import Flask
+from flask import Flask, request
+
+from google.cloud.pubsublite.cloudpubsub import PublisherClient
+
+from google.cloud.pubsublite.types import (
+    CloudRegion,
+    CloudZone,
+    MessageMetadata,
+    TopicPath,
+)
 
 from utils.logging import logger
 
+from threading import Thread
+
 app = Flask(__name__)
 
+#Uses auth.json for authentication
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "auth.json"
 
-@app.route("/")
+@app.route("/", methods=['POST'])
 def hello() -> str:
-    # Use basic logging with custom fields
-    logger.info(logField="custom-entry", arbitraryField="custom-entry")
+    data = request.get_json()
 
-    # https://cloud.google.com/run/docs/logging#correlate-logs
-    logger.info("Child logger with trace Id.")
+    #Process the lead in a thread if the event_type is new_lead
+    event_type = data['event_type']
+    if 'event_type' in data and event_type in config.EVENT_TYPES:
+        Thread(target=processLead, args=(data,)).start()
+    else:
+        logger.warn(f'Found event type: {event_type} : {str(data)}')
 
-    return "Hello, Servco!"
+    #Return a blank response if api_partner was not passed
+    if not 'api_partner' in data:
+        logger.warn(f'No api_partner field found: {str(data)}')
+        return ''
+
+    ret = data['api_partner']
+    ret.pop('name', None)
+    return ret
+
+#Processes the roadster lead create pub/sub message
+def processLead(data):
+    try:
+        location = CloudZone(CloudRegion(config.CLOUD_REGION), config.ZONE_ID)
+        topic_path = TopicPath(config.PROJECT_ID, location, config.TOPIC_ID)
+        with PublisherClient() as publisher:
+            encoded_data = str(data).encode("utf-8")
+            future = publisher.publish(topic_path, encoded_data)
+    except Exception as e:
+        logger.error(e)
+
 
 
 def shutdown_handler(signal_int: int, frame: FrameType) -> None:
@@ -52,6 +90,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, shutdown_handler)
 
     app.run(host="localhost", port=8080, debug=True)
+
 else:
     # handles Cloud Run container termination
     signal.signal(signal.SIGTERM, shutdown_handler)
