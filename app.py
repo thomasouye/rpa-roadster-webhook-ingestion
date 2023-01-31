@@ -40,7 +40,7 @@ app = Flask(__name__)
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "auth.json"
 
 @app.route("/", methods=['POST'])
-def hello() -> str:
+def webhook() -> str:
     data = request.get_json()
 
     #Process the lead in a thread if the event_type is new_lead
