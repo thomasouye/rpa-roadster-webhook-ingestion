@@ -43,6 +43,10 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "auth.json"
 def webhook() -> str:
     data = request.get_json()
 
+    logger.info(request)
+
+    logger.info(data)
+
     #Process the lead in a thread if the event_type is new_lead
     event_type = data['event_type']
     if 'event_type' in data and event_type in config.EVENT_TYPES:
