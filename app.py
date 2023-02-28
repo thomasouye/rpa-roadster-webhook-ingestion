@@ -37,7 +37,8 @@ from threading import Thread
 app = Flask(__name__)
 
 #Uses auth.json for authentication
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "auth.json"
+if not "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "auth.json"
 
 @app.route("/", methods=['POST'])
 def webhook() -> str:
