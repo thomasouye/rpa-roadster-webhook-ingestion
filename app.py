@@ -17,6 +17,8 @@ import sys
 import config
 import os
 
+from pathlib import Path
+
 from types import FrameType
 
 from flask import Flask, request
@@ -37,8 +39,9 @@ from threading import Thread
 app = Flask(__name__)
 
 #Uses auth.json for authentication
-if not "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "auth.json"
+auth_file = Path("auth.json")
+if auth_file.is_file():
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(auth_file)
 
 @app.route("/", methods=['POST'])
 def webhook() -> str:
