@@ -5,4 +5,4 @@ CLOUD_REGION = "us-west1"
 ZONE_ID = "a"
 
 #Valid Roadster event types to process
-EVENT_TYPES = ['new_lead']
+EVENT_TYPES = ['customer_completed_trade', 'customer_partially_completed_trade']
